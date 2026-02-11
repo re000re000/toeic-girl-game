@@ -1,0 +1,26 @@
+{
+  "name": "toeic-girl-game-web",
+  "version": "1.0.0",
+  "description": "TOEIC英単語 美少女魔法バトル - GitHub Pages版",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.6",
+    "terser": "^5.46.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0"
+  }
+}
