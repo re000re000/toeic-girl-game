@@ -38,7 +38,7 @@ export async function loadWordsData(): Promise<Word[]> {
   }
 
   try {
-    const response = await fetch('/toeic-girl-game/data/words_data.json');
+    const response = await fetch('./data/words_data.json');
     if (!response.ok) {
       throw new Error('Failed to load words data');
     }
@@ -95,7 +95,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   // PNG or JPEG の判定
   const ext = state === 0 ? 'png' : 'jpg';
 
-  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  return `./characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 // キャラクター情報を取得

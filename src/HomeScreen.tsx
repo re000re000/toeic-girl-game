@@ -12,7 +12,7 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
         <div className="text-center mt-12 mb-8">
           <h1 className="text-4xl font-bold text-purple-900 mb-2">TOEIC英単語</h1>
           <h2 className="text-3xl font-bold text-pink-600 mb-4">美少女魔法バトル</h2>
-          <p className="text-gray-600">英単語の意味を当てて、キャラクターを成長させよう！</p>
+
         </div>
 
         {/* ゲーム説明 */}
@@ -20,7 +20,7 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
           <h3 className="text-xl font-bold text-gray-800 mb-4">ゲームの遊び方</h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li>✅ 英単語の意味を3択から選ぶ</li>
-            <li>✅ 正解するとキャラクターが成長</li>
+
             <li>✅ 10問正解でステージクリア</li>
             <li>✅ 間違えるとハートが1つ減る</li>
             <li>✅ ハートが0になるとゲームオーバー</li>
