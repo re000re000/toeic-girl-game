@@ -37,42 +37,28 @@ export async function loadWordsData(): Promise<Word[]> {
     return wordsData;
   }
 
-  // GitHub Pages環境（サブディレクトリ）でも動作するように、相対パスを明示的に構築
-  // 現在のURLのディレクトリ部分を取得
-  const baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  const dataPath = `${baseUrl}data/words_data.json`;
+  // GitHub Pages環境で確実に動く相対パスを指定
+  const dataPath = './data/words_data.json';
 
   try {
-    console.log(`Attempting to load words data from: ${dataPath}`);
+    console.log(`Attempting to fetch data from: ${dataPath}`);
     const response = await fetch(dataPath);
     if (!response.ok) {
-      throw new Error(`Failed to load words data from ${dataPath}. Status: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to load: ${dataPath} (Status: ${response.status})`);
     }
     const data = await response.json();
     
+    // 読み込み成否のログ出力
+    console.log("Fetched data:", data);
+
     if (!Array.isArray(data)) {
-      throw new Error(`Loaded data is not an array. Path: ${dataPath}`);
+      throw new Error("Fetched data is not an array");
     }
 
     wordsData = data;
-    console.log(`Successfully loaded ${wordsData.length} words.`);
     return wordsData;
   } catch (error) {
     console.error('Error loading words data:', error);
-    // フォールバックとして、単純な相対パスでも試行
-    try {
-      console.log('Attempting fallback load from ./data/words_data.json');
-      const fallbackResponse = await fetch('./data/words_data.json');
-      if (fallbackResponse.ok) {
-        const fallbackData = await fallbackResponse.json();
-        if (Array.isArray(fallbackData)) {
-          wordsData = fallbackData;
-          return wordsData;
-        }
-      }
-    } catch (fallbackError) {
-      console.error('Fallback load also failed:', fallbackError);
-    }
     return [];
   }
 }
@@ -128,8 +114,8 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   // PNG or JPEG の判定
   const ext = state === 0 ? 'png' : 'jpg';
 
-  const baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  return `${baseUrl}characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  // 画像も相対パスで指定
+  return `./characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 // キャラクター情報を取得
