@@ -1,3 +1,4 @@
+// Final Update: 2026-02-13
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
 // キャラクター情報（これはそのまま）
