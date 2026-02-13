@@ -68,7 +68,10 @@ export function getWordsByLevel(level: number, words: Word[]): Word[] {
     console.error('getWordsByLevel: words is not an array', words);
     return [];
   }
-  const filtered = words.filter((word) => word.level === level);
+  
+  // 型の違い（文字か数字か）を無視して、確実に一致させる書き方に修正
+  const filtered = words.filter((word) => Number(word.level) === Number(level));
+  
   console.log(`Filtered words for level ${level}:`, filtered.length);
   return filtered;
 }
