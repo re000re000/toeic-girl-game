@@ -62,17 +62,25 @@ export async function loadWordsData(): Promise<Word[]> {
   }
 }
 
-// レベルに応じた単語を取得
-export function getWordsByLevel(level: number, words: Word[]): Word[] {
+export function getWordsByLevel(level: any, words: Word[]): Word[] {
   if (!Array.isArray(words)) {
     console.error('getWordsByLevel: words is not an array', words);
     return [];
   }
-  
-  // 型の違い（文字か数字か）を無視して、確実に一致させる書き方に修正
-  const filtered = words.filter((word) => Number(word.level) === Number(level));
-  
-  console.log(`Filtered words for level ${level}:`, filtered.length);
+
+  // levelが "Level 1" みたいな文字列で来ても、数字の 1 だけを取り出す魔法
+  const targetLevel = typeof level === 'string' 
+    ? parseInt(level.replace(/[^0-9]/g, '')) 
+    : Number(level);
+
+  console.log(`Searching for Level: ${targetLevel}`);
+
+  const filtered = words.filter((word) => {
+    // データ側のlevelも念のため数字に変換して比較
+    return Number(word.level) === targetLevel;
+  });
+
+  console.log(`Found ${filtered.length} words for level ${targetLevel}`);
   return filtered;
 }
 
