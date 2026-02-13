@@ -37,27 +37,60 @@ export async function loadWordsData(): Promise<Word[]> {
     return wordsData;
   }
 
+  // GitHub Pages環境（サブディレクトリ）でも動作するように、相対パスを明示的に構築
+  // 現在のURLのディレクトリ部分を取得
+  const baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const dataPath = `${baseUrl}data/words_data.json`;
+
   try {
-    const response = await fetch('./data/words_data.json');
+    console.log(`Attempting to load words data from: ${dataPath}`);
+    const response = await fetch(dataPath);
     if (!response.ok) {
-      throw new Error('Failed to load words data');
+      throw new Error(`Failed to load words data from ${dataPath}. Status: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
+    
+    if (!Array.isArray(data)) {
+      throw new Error(`Loaded data is not an array. Path: ${dataPath}`);
+    }
+
     wordsData = data;
+    console.log(`Successfully loaded ${wordsData.length} words.`);
     return wordsData;
   } catch (error) {
     console.error('Error loading words data:', error);
+    // フォールバックとして、単純な相対パスでも試行
+    try {
+      console.log('Attempting fallback load from ./data/words_data.json');
+      const fallbackResponse = await fetch('./data/words_data.json');
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        if (Array.isArray(fallbackData)) {
+          wordsData = fallbackData;
+          return wordsData;
+        }
+      }
+    } catch (fallbackError) {
+      console.error('Fallback load also failed:', fallbackError);
+    }
     return [];
   }
 }
 
 // レベルに応じた単語を取得
 export function getWordsByLevel(level: number, words: Word[]): Word[] {
+  if (!Array.isArray(words)) {
+    console.error('getWordsByLevel: words is not an array', words);
+    return [];
+  }
   return words.filter((word) => word.level === level);
 }
 
 // ランダムな単語を取得
 export function getRandomWord(words: Word[]): Word {
+  if (!Array.isArray(words) || words.length === 0) {
+    throw new Error('getRandomWord: words array is empty or invalid');
+  }
   return words[Math.floor(Math.random() * words.length)];
 }
 
@@ -95,7 +128,8 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   // PNG or JPEG の判定
   const ext = state === 0 ? 'png' : 'jpg';
 
-  return `./characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  const baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  return `${baseUrl}characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 // キャラクター情報を取得
