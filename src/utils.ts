@@ -38,7 +38,10 @@ export async function loadWordsData(): Promise<Word[]> {
   }
 
   // ルート直下のdataフォルダを相対パスで指定
-  const dataPath = './data/words_data.json';
+  // 修正後：ブラウザが今いる場所（サブディレクトリ）を考慮したパスにする
+const dataPath = window.location.pathname.includes('toeic-girl-game') 
+  ? '/toeic-girl-game/data/words_data.json' 
+  : './data/words_data.json';
 
   try {
     console.log(`Attempting to fetch data from: ${dataPath}`);
