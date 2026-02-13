@@ -1,6 +1,6 @@
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
-// キャラクター情報
+// キャラクター情報（これは消しちゃダメ！）
 const CHARACTERS: Record<number, CharacterInfo[]> = {
   1: [
     { id: 0, name: 'Alice', level: 1 },
@@ -31,40 +31,30 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 
 let wordsData: Word[] = [];
 
-// 単語データを読み込む
+// 単語データを読み込む（★ここを最強のURL直接指定に書き換えました）
 export async function loadWordsData(): Promise<Word[]> {
   if (wordsData.length > 0) {
     return wordsData;
   }
 
-  // ルート直下のdataフォルダを相対パスで指定
-  // 修正後：ブラウザが今いる場所（サブディレクトリ）を考慮したパスにする
-const dataPath = window.location.pathname.includes('toeic-girl-game') 
-  ? '/toeic-girl-game/data/words_data.json' 
-  : './data/words_data.json';
+  const dataPath = 'https://re000re000.github.io/toeic-girl-game/data/words_data.json';
 
   try {
     console.log(`Attempting to fetch data from: ${dataPath}`);
     const response = await fetch(dataPath);
     
-    // 404チェックの追加
     if (!response.ok) {
-      throw new Error(`File not found at: ${response.url} (Status: ${response.status})`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    const contentType = response.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-      throw new Error(`Expected JSON but received ${contentType} from ${response.url}. This usually means a 404 page was returned as HTML.`);
-    }
-
+    
     const data = await response.json();
-    console.log("Fetched data successfully:", data);
-
+    
     if (!Array.isArray(data)) {
-      throw new Error(`Fetched data is not an array. Type: ${typeof data}`);
+      throw new Error('Data is not an array');
     }
-
+    
     wordsData = data;
+    console.log('Successfully loaded words data:', wordsData.length);
     return wordsData;
   } catch (error) {
     console.error('CRITICAL ERROR loading words data:', error);
@@ -121,12 +111,10 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
-
-  // PNG or JPEG の判定
   const ext = state === 0 ? 'png' : 'jpg';
 
-  // ルート直下のcharactersフォルダを相対パスで指定
-  return `./characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  // 相対パスの "./" を "/toeic-girl-game/" に統一してさらに安全に
+  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 // キャラクター情報を取得
