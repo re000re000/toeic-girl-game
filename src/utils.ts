@@ -1,98 +1,58 @@
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
-// キャラクター情報（これは消しちゃダメ！）
+// キャラクター情報（これはそのまま）
 const CHARACTERS: Record<number, CharacterInfo[]> = {
-  1: [
-    { id: 0, name: 'Alice', level: 1 },
-    { id: 1, name: 'Bella', level: 1 },
-    { id: 2, name: 'Chloe', level: 1 },
-  ],
-  2: [
-    { id: 0, name: 'Diana', level: 2 },
-    { id: 1, name: 'Emma', level: 2 },
-    { id: 2, name: 'Fiona', level: 2 },
-  ],
-  3: [
-    { id: 0, name: 'Grace', level: 3 },
-    { id: 1, name: 'Hannah', level: 3 },
-    { id: 2, name: 'Iris', level: 3 },
-  ],
-  4: [
-    { id: 0, name: 'Julia', level: 4 },
-    { id: 1, name: 'Karen', level: 4 },
-    { id: 2, name: 'Luna', level: 4 },
-  ],
-  5: [
-    { id: 0, name: 'Mia', level: 5 },
-    { id: 1, name: 'Nina', level: 5 },
-    { id: 2, name: 'Olivia', level: 5 },
-  ],
+  1: [{ id: 0, name: 'Alice', level: 1 }, { id: 1, name: 'Bella', level: 1 }, { id: 2, name: 'Chloe', level: 1 }],
+  2: [{ id: 0, name: 'Diana', level: 2 }, { id: 1, name: 'Emma', level: 2 }, { id: 2, name: 'Fiona', level: 2 }],
+  3: [{ id: 0, name: 'Grace', level: 3 }, { id: 1, name: 'Hannah', level: 3 }, { id: 2, name: 'Iris', level: 3 }],
+  4: [{ id: 0, name: 'Julia', level: 4 }, { id: 1, name: 'Karen', level: 4 }, { id: 2, name: 'Luna', level: 4 }],
+  5: [{ id: 0, name: 'Mia', level: 5 }, { id: 1, name: 'Nina', level: 5 }, { id: 2, name: 'Olivia', level: 5 }],
 };
 
 let wordsData: Word[] = [];
 
-// 単語データを読み込む（★ここを最強のURL直接指定に書き換えました）
+// 単語データを読み込む（キャッシュを物理的に破壊するバージョン）
 export async function loadWordsData(): Promise<Word[]> {
-  if (wordsData.length > 0) {
-    return wordsData;
-  }
+  if (wordsData.length > 0) return wordsData;
 
-  const dataPath = 'https://re000re000.github.io/toeic-girl-game/data/words_data.json';
+  // URLの末尾に ?v=日付 を入れて、ブラウザの「404の記憶」を上書きします
+  const dataPath = `https://re000re000.github.io/toeic-girl-game/data/words_data.json?v=${new Date().getTime()}`;
 
   try {
-    console.log(`Attempting to fetch data from: ${dataPath}`);
     const response = await fetch(dataPath);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
+    wordsData = Array.isArray(data) ? data : (data.words || []);
     
-    if (!Array.isArray(data)) {
-      throw new Error('Data is not an array');
-    }
+    if (wordsData.length === 0) throw new Error('Loaded array is empty');
     
-    wordsData = data;
-    console.log('Successfully loaded words data:', wordsData.length);
     return wordsData;
   } catch (error) {
-    console.error('CRITICAL ERROR loading words data:', error);
+    console.error('CRITICAL ERROR:', error);
     return [];
   }
 }
 
 export function getWordsByLevel(level: any, words: Word[]): Word[] {
-  if (!Array.isArray(words)) {
-    console.error('getWordsByLevel: words is not an array', words);
-    return [];
-  }
+  // wordsが空、または配列じゃない場合のガードを鉄壁に
+  if (!words || !Array.isArray(words)) return [];
 
-  // levelが "Level 1" みたいな文字列で来ても、数字の 1 だけを取り出す魔法
   const targetLevel = typeof level === 'string' 
     ? parseInt(level.replace(/[^0-9]/g, '')) 
     : Number(level);
 
-  console.log(`Searching for Level: ${targetLevel}`);
-
-  const filtered = words.filter((word) => {
-    // データ側のlevelも念のため数字に変換して比較
-    return Number(word.level) === targetLevel;
-  });
-
-  console.log(`Found ${filtered.length} words for level ${targetLevel}`);
-  return filtered;
+  return words.filter((word) => word && Number(word.level) === targetLevel);
 }
 
-// ランダムな単語を取得
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
-    throw new Error('getRandomWord: words array is empty or invalid');
+    // データがない時にゲームが止まらないよう、ダミーデータを返す
+    return { word: "Error", meaning: "データ読み込み中...", level: 1 };
   }
   return words[Math.floor(Math.random() * words.length)];
 }
 
-// クイズ問題を生成
 export function generateQuizQuestion(word: Word, allWords: Word[]): QuizQuestion {
   const wrongAnswers = allWords
     .filter((w) => w.word !== word.word)
@@ -101,42 +61,23 @@ export function generateQuizQuestion(word: Word, allWords: Word[]): QuizQuestion
     .map((w) => w.meaning);
 
   const options = [word.meaning, ...wrongAnswers].sort(() => Math.random() - 0.5);
-  const correctIndex = options.indexOf(word.meaning);
-
-  return {
-    word,
-    options,
-    correctIndex,
-  };
+  return { word, options, correctIndex: options.indexOf(word.meaning) };
 }
 
-// キャラクター画像パスを取得
 export function getCharacterImagePath(characterId: number, state: number): string {
-  const stateMap: Record<number, string> = {
-    0: 'state0',
-    1: 'state1',
-    2: 'state1_5',
-    3: 'state2',
-  };
-
+  const stateMap: Record<number, string> = { 0: 'state0', 1: 'state1', 2: 'state1_5', 3: 'state2' };
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-
-  // 相対パスの "./" を "/toeic-girl-game/" に統一してさらに安全に
   return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
-// キャラクター情報を取得
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
   const characters = CHARACTERS[level];
-  if (!characters) return undefined;
-  return characters[Math.floor(Math.random() * characters.length)];
+  return characters ? characters[Math.floor(Math.random() * characters.length)] : undefined;
 }
 
-// ランダムなキャラクターIDを取得
 export function getRandomCharacterId(level: number): number {
-  const baseId = (level - 1) * 3;
-  return baseId + Math.floor(Math.random() * 3);
+  return ((level - 1) * 3) + Math.floor(Math.random() * 3);
 }
