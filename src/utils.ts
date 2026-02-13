@@ -37,28 +37,34 @@ export async function loadWordsData(): Promise<Word[]> {
     return wordsData;
   }
 
-  // GitHub Pages環境で確実に動く相対パスを指定
+  // ルート直下のdataフォルダを相対パスで指定
   const dataPath = './data/words_data.json';
 
   try {
     console.log(`Attempting to fetch data from: ${dataPath}`);
     const response = await fetch(dataPath);
-    if (!response.ok) {
-      throw new Error(`Failed to load: ${dataPath} (Status: ${response.status})`);
-    }
-    const data = await response.json();
     
-    // 読み込み成否のログ出力
-    console.log("Fetched data:", data);
+    // 404チェックの追加
+    if (!response.ok) {
+      throw new Error(`File not found at: ${response.url} (Status: ${response.status})`);
+    }
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && !contentType.includes("application/json")) {
+      throw new Error(`Expected JSON but received ${contentType} from ${response.url}. This usually means a 404 page was returned as HTML.`);
+    }
+
+    const data = await response.json();
+    console.log("Fetched data successfully:", data);
 
     if (!Array.isArray(data)) {
-      throw new Error("Fetched data is not an array");
+      throw new Error(`Fetched data is not an array. Type: ${typeof data}`);
     }
 
     wordsData = data;
     return wordsData;
   } catch (error) {
-    console.error('Error loading words data:', error);
+    console.error('CRITICAL ERROR loading words data:', error);
     return [];
   }
 }
@@ -69,7 +75,9 @@ export function getWordsByLevel(level: number, words: Word[]): Word[] {
     console.error('getWordsByLevel: words is not an array', words);
     return [];
   }
-  return words.filter((word) => word.level === level);
+  const filtered = words.filter((word) => word.level === level);
+  console.log(`Filtered words for level ${level}:`, filtered.length);
+  return filtered;
 }
 
 // ランダムな単語を取得
@@ -114,7 +122,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   // PNG or JPEG の判定
   const ext = state === 0 ? 'png' : 'jpg';
 
-  // 画像も相対パスで指定
+  // ルート直下のcharactersフォルダを相対パスで指定
   return `./characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
