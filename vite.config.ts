@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/toeic-girl-game/', // あなたのリポジトリ名をハッキリ指定します
+  base: '', // ここを空文字にします。これで「今いる場所」を基準にします
 })
