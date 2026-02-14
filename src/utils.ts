@@ -16,7 +16,7 @@ let wordsData: Word[] = [];
 export async function loadWordsData(): Promise<Word[]> {
   if (wordsData.length > 0) return wordsData;
 
-const dataPath = '/toeic-girl-game/data/words_data.json';
+const dataPath = 'data/words_data.json'; // 先頭の / を消す
 
   try {
     console.log(`Fetching from: ${dataPath}`);
@@ -80,7 +80,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  return `characters/level${level}_char${charIndex}_${stateStr}.${ext}`; // 先頭の / を消す
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
