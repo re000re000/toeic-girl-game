@@ -16,7 +16,7 @@ let wordsData: Word[] = [];
 export async function loadWordsData(): Promise<Word[]> {
   if (wordsData.length > 0) return wordsData;
 
-  const dataPath = './data/words_data.json';
+const dataPath = '/toeic-girl-game/data/words_data.json';
 
   try {
     console.log(`Fetching from: ${dataPath}`);
