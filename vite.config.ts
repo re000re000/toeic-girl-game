@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // ここを相対パスに変えるのがコツです
+  base: '/toeic-girl-game/', // あなたのリポジトリ名をハッキリ指定します
 })
