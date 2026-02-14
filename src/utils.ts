@@ -1,7 +1,7 @@
-// Final Update: 2026-02-13
+// Final Update: 2026-02-14 - Data Rescue Version
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
-// キャラクター情報（これはそのまま）
+// キャラクター情報
 const CHARACTERS: Record<number, CharacterInfo[]> = {
   1: [{ id: 0, name: 'Alice', level: 1 }, { id: 1, name: 'Bella', level: 1 }, { id: 2, name: 'Chloe', level: 1 }],
   2: [{ id: 0, name: 'Diana', level: 2 }, { id: 1, name: 'Emma', level: 2 }, { id: 2, name: 'Fiona', level: 2 }],
@@ -12,31 +12,41 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 
 let wordsData: Word[] = [];
 
-// 単語データを読み込む（キャッシュを物理的に破壊するバージョン）
+// 単語データを読み込む（最強のデータ救出バージョン）
 export async function loadWordsData(): Promise<Word[]> {
   if (wordsData.length > 0) return wordsData;
 
-  // URLの末尾に ?v=日付 を入れて、ブラウザの「404の記憶」を上書きします
   const dataPath = `https://re000re000.github.io/toeic-girl-game/data/words_data.json?v=${new Date().getTime()}`;
 
   try {
+    console.log(`Fetching from: ${dataPath}`);
     const response = await fetch(dataPath);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
-    wordsData = Array.isArray(data) ? data : (data.words || []);
+    console.log("Raw data loaded:", data);
+
+    // データの形が [ ] でも { "words": [ ] } でも対応できるようにします
+    let words: Word[] = [];
+    if (Array.isArray(data)) {
+      words = data;
+    } else if (data && typeof data === 'object' && Array.isArray(data.words)) {
+      words = data.words;
+    }
+
+    if (words.length === 0) {
+      throw new Error('No words found in the loaded data');
+    }
     
-    if (wordsData.length === 0) throw new Error('Loaded array is empty');
-    
+    wordsData = words;
     return wordsData;
   } catch (error) {
-    console.error('CRITICAL ERROR:', error);
+    console.error('CRITICAL ERROR loading words data:', error);
     return [];
   }
 }
 
 export function getWordsByLevel(level: any, words: Word[]): Word[] {
-  // wordsが空、または配列じゃない場合のガードを鉄壁に
   if (!words || !Array.isArray(words)) return [];
 
   const targetLevel = typeof level === 'string' 
@@ -48,7 +58,6 @@ export function getWordsByLevel(level: any, words: Word[]): Word[] {
 
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
-    // データがない時にゲームが止まらないよう、ダミーデータを返す
     return { word: "Error", meaning: "データ読み込み中...", level: 1 };
   }
   return words[Math.floor(Math.random() * words.length)];
