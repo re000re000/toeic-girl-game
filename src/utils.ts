@@ -9,28 +9,25 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
   5: [{ id: 0, name: 'Mia', level: 5 }, { id: 1, name: 'Nina', level: 5 }, { id: 2, name: 'Olivia', level: 5 }],
 };
 
-let wordsData: Word[] = [];
+let cachedWords: Word[] = [];
 
 // 単語データを読み込む
 export async function loadWordsData(): Promise<Word[]> {
-  if (wordsData.length > 0) return wordsData;
+  // すでにデータがある場合はそれを返す
+  if (cachedWords && cachedWords.length > 0) return cachedWords;
 
-  // キャッシュを避けるためにタイムスタンプを付与
   const dataPath = `data/words_data.json?t=${new Date().getTime()}`;
 
   try {
-    console.log(`Fetching from: ${dataPath}`);
+    console.log("Fetching data from:", dataPath);
     const response = await fetch(dataPath);
     
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    // 【重要】中身を一度テキストとして確認する
-    const text = await response.text();
-    console.log("Raw Text Check (First 50 chars):", text.substring(0, 50));
+    const data = await response.json();
+    console.log("Raw data loaded:", data);
 
-    const data = JSON.parse(text);
-    console.log("Parsed Data:", data);
-
+    // データの形をチェックして、配列を取り出す
     let words: Word[] = [];
     if (Array.isArray(data)) {
       words = data;
@@ -38,30 +35,40 @@ export async function loadWordsData(): Promise<Word[]> {
       words = data.words;
     }
 
-    if (words.length === 0) {
-      throw new Error('No words found in the loaded data');
+    if (!words || words.length === 0) {
+      console.error("Words list is empty!");
+      return [];
     }
     
-    wordsData = words;
-    return wordsData;
+    cachedWords = words; // キャッシュに保存
+    return cachedWords;
   } catch (error) {
-    console.error('CRITICAL ERROR loading words data:', error);
+    console.error('CRITICAL ERROR:', error);
     return [];
   }
 }
 
+// レベルに合った単語をフィルタリングする（エラーに超強いバージョン）
 export function getWordsByLevel(level: any, words: any): Word[] {
-  // words が配列じゃない（undefinedやnull、オブジェクト）場合に備える
-  const safeWords = Array.isArray(words) ? words : (words?.words || []);
+  // wordsが空、または配列でない場合は cachedWords を使う
+  const targetArray = Array.isArray(words) ? words : cachedWords;
   
-  if (!Array.isArray(safeWords)) return [];
+  if (!Array.isArray(targetArray)) {
+    console.error("targetArray is not an array:", targetArray);
+    return [];
+  }
 
   const targetLevel = typeof level === 'string' 
     ? parseInt(level.replace(/[^0-9]/g, '')) 
     : Number(level);
 
-  return safeWords.filter((word: any) => word && Number(word.level) === targetLevel);
+  console.log(`Filtering for level ${targetLevel}...`);
+  
+  return targetArray.filter((word: any) => {
+    return word && Number(word.level) === targetLevel;
+  });
 }
+
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
     return { word: "Error", meaning: "データ読み込み中...", level: 1 };
@@ -86,7 +93,6 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-  // 相対パス（先頭のスラッシュなし）
   return `characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
