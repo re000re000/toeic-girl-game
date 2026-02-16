@@ -50,16 +50,18 @@ export async function loadWordsData(): Promise<Word[]> {
   }
 }
 
-export function getWordsByLevel(level: any, words: Word[]): Word[] {
-  if (!words || !Array.isArray(words)) return [];
+export function getWordsByLevel(level: any, words: any): Word[] {
+  // words が配列じゃない（undefinedやnull、オブジェクト）場合に備える
+  const safeWords = Array.isArray(words) ? words : (words?.words || []);
+  
+  if (!Array.isArray(safeWords)) return [];
 
   const targetLevel = typeof level === 'string' 
     ? parseInt(level.replace(/[^0-9]/g, '')) 
     : Number(level);
 
-  return words.filter((word) => word && Number(word.level) === targetLevel);
+  return safeWords.filter((word: any) => word && Number(word.level) === targetLevel);
 }
-
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
     return { word: "Error", meaning: "データ読み込み中...", level: 1 };
