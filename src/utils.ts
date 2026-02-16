@@ -12,7 +12,10 @@ let cachedWords: Word[] = [];
 
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedWords.length > 0) return cachedWords;
-  const dataPath = './data/words_data.json';
+  
+  // GitHub Pages上での絶対パスを指定して、迷子をゼロにします
+  const dataPath = '/toeic-girl-game/data/words_data.json';
+
   try {
     const response = await fetch(dataPath);
     if (!response.ok) throw new Error('Network response was not ok');
