@@ -1,4 +1,3 @@
-// Final Update: 2026-02-14 - Data Rescue Version
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
 // キャラクター情報
@@ -12,21 +11,26 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 
 let wordsData: Word[] = [];
 
-// 単語データを読み込む（最強のデータ救出バージョン）
+// 単語データを読み込む
 export async function loadWordsData(): Promise<Word[]> {
   if (wordsData.length > 0) return wordsData;
 
-const dataPath = 'data/words_data.json'; // 先頭の / を消す
+  // キャッシュを避けるためにタイムスタンプを付与
+  const dataPath = `data/words_data.json?t=${new Date().getTime()}`;
 
   try {
     console.log(`Fetching from: ${dataPath}`);
     const response = await fetch(dataPath);
+    
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    const data = await response.json();
-    console.log("Raw data loaded:", data);
+    // 【重要】中身を一度テキストとして確認する
+    const text = await response.text();
+    console.log("Raw Text Check (First 50 chars):", text.substring(0, 50));
 
-    // データの形が [ ] でも { "words": [ ] } でも対応できるようにします
+    const data = JSON.parse(text);
+    console.log("Parsed Data:", data);
+
     let words: Word[] = [];
     if (Array.isArray(data)) {
       words = data;
@@ -80,7 +84,8 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-  return `characters/level${level}_char${charIndex}_${stateStr}.${ext}`; // 先頭の / を消す
+  // 相対パス（先頭のスラッシュなし）
+  return `characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
