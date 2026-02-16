@@ -13,9 +13,10 @@ let cachedRawData: any = null;
 
 // 単語データを読み込む
 export async function loadWordsData(): Promise<Word[]> {
-  if (cachedRawData) return []; // この関数は互換性のために残すが、実際には getWordsByLevel で処理する
+  if (cachedRawData) return [];
 
-  const dataPath = './data/words_data.json'; 
+  // GitHub Pagesのサブディレクトリを考慮した絶対パス
+  const dataPath = '/toeic-girl-game/data/words_data.json'; 
 
   try {
     console.log(`Attempting to fetch data from: ${dataPath}`);
@@ -27,9 +28,20 @@ export async function loadWordsData(): Promise<Word[]> {
     console.log("Fetched data successfully:", data);
     
     cachedRawData = data;
-    return []; // 互換性のための空配列
+    return [];
   } catch (error) {
     console.error('CRITICAL LOAD ERROR:', error);
+    // フォールバックとして相対パスも試す
+    try {
+      console.log("Attempting fallback with ./data/words_data.json");
+      const fallbackResponse = await fetch('./data/words_data.json');
+      if (fallbackResponse.ok) {
+        cachedRawData = await fallbackResponse.json();
+        return [];
+      }
+    } catch (e) {
+      console.error("Fallback also failed", e);
+    }
     return [];
   }
 }
@@ -49,7 +61,6 @@ export function getWordsByLevel(level: any, _words: Word[]): Word[] {
     return [];
   }
 
-  // Word型にlevelプロパティを追加して返す
   return words.map((w: any) => ({
     ...w,
     level: Number(level)
@@ -64,7 +75,6 @@ export function getRandomWord(words: Word[]): Word {
 }
 
 export function generateQuizQuestion(word: Word, _allWords: Word[]): QuizQuestion {
-  // 全レベルの単語から誤答を生成するために cachedRawData を使用
   let allPossibleWords: Word[] = [];
   if (cachedRawData) {
     Object.keys(cachedRawData).forEach(key => {
@@ -88,7 +98,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const stateMap: Record<number, string> = { 0: 'state0', 1: 'state1', 2: 'state1_5', 3: 'state2' };
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
-  return `./characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
+  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
