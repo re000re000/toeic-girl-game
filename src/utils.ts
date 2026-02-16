@@ -12,7 +12,7 @@ let cachedWords: Word[] = [];
 
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedWords.length > 0) return cachedWords;
-  const dataPath = 'data/words_data.json';
+  const dataPath = './data/words_data.json';
   try {
     const response = await fetch(dataPath);
     if (!response.ok) throw new Error('Network response was not ok');
