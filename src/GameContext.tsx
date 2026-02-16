@@ -22,14 +22,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
   const [levelWords, setLevelWords] = useState<Word[]>([]);
-  const [allWords, setAllWords] = useState<Word[]>([]);
 
   // ゲームを初期化
   const initializeGame = useCallback(async (level: number) => {
-    const words = await loadWordsData();
-    setAllWords(words);
+    // データを読み込む（内部でキャッシュされる）
+    await loadWordsData();
 
-    const levelSpecificWords = getWordsByLevel(level, words);
+    // レベルに応じた単語を取得
+    const levelSpecificWords = getWordsByLevel(level, []);
     setLevelWords(levelSpecificWords);
 
     const characterId = getRandomCharacterId(level);
@@ -48,7 +48,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     // 最初の問題を生成
     const word = getRandomWord(levelSpecificWords);
-    const question = generateQuizQuestion(word, words);
+    const question = generateQuizQuestion(word, []);
     setCurrentQuestion(question);
   }, []);
 
@@ -92,12 +92,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // 次の問題を生成
       const word = getRandomWord(levelWords);
-      const question = generateQuizQuestion(word, allWords);
+      const question = generateQuizQuestion(word, []);
       setCurrentQuestion(question);
 
       return { isCorrect, isLevelComplete: false };
     },
-    [gameState, currentQuestion, levelWords, allWords]
+    [gameState, currentQuestion, levelWords]
   );
 
   // ゲームをリセット
