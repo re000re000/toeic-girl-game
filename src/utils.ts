@@ -1,6 +1,5 @@
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
-// キャラクター情報
 const CHARACTERS: Record<number, CharacterInfo[]> = {
   1: [{ id: 0, name: 'Alice', level: 1 }, { id: 1, name: 'Bella', level: 1 }, { id: 2, name: 'Chloe', level: 1 }],
   2: [{ id: 0, name: 'Diana', level: 2 }, { id: 1, name: 'Emma', level: 2 }, { id: 2, name: 'Fiona', level: 2 }],
@@ -11,79 +10,41 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 
 let cachedWords: Word[] = [];
 
-// 単語データを読み込む
 export async function loadWordsData(): Promise<Word[]> {
-  // すでにデータがある場合はそれを返す
-  if (cachedWords && cachedWords.length > 0) return cachedWords;
-
-  const dataPath = `data/words_data.json?t=${new Date().getTime()}`;
-
+  if (cachedWords.length > 0) return cachedWords;
+  const dataPath = 'data/words_data.json';
   try {
-    console.log("Fetching data from:", dataPath);
     const response = await fetch(dataPath);
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
+    if (!response.ok) throw new Error('Network response was not ok');
     const data = await response.json();
-    console.log("Raw data loaded:", data);
-
-    // データの形をチェックして、配列を取り出す
-    let words: Word[] = [];
-    if (Array.isArray(data)) {
-      words = data;
-    } else if (data && typeof data === 'object' && Array.isArray(data.words)) {
-      words = data.words;
-    }
-
-    if (!words || words.length === 0) {
-      console.error("Words list is empty!");
-      return [];
-    }
-    
-    cachedWords = words; // キャッシュに保存
-    return cachedWords;
+    const words = Array.isArray(data) ? data : (data.words || []);
+    cachedWords = words;
+    return words;
   } catch (error) {
-    console.error('CRITICAL ERROR:', error);
+    console.error('Failed to load words:', error);
     return [];
   }
 }
 
-// レベルに合った単語をフィルタリングする（エラーに超強いバージョン）
 export function getWordsByLevel(level: any, words: any): Word[] {
-  // wordsが空、または配列でない場合は cachedWords を使う
-  const targetArray = Array.isArray(words) ? words : cachedWords;
+  // ここが「filterがない」と怒られている場所なので、徹底的に守ります
+  const arrayToFilter = Array.isArray(words) ? words : (Array.isArray(cachedWords) ? cachedWords : []);
   
-  if (!Array.isArray(targetArray)) {
-    console.error("targetArray is not an array:", targetArray);
-    return [];
-  }
-
   const targetLevel = typeof level === 'string' 
     ? parseInt(level.replace(/[^0-9]/g, '')) 
     : Number(level);
 
-  console.log(`Filtering for level ${targetLevel}...`);
-  
-  return targetArray.filter((word: any) => {
-    return word && Number(word.level) === targetLevel;
-  });
+  return arrayToFilter.filter((w: any) => w && Number(w.level) === targetLevel);
 }
 
 export function getRandomWord(words: Word[]): Word {
-  if (!Array.isArray(words) || words.length === 0) {
-    return { word: "Error", meaning: "データ読み込み中...", level: 1 };
-  }
+  if (!Array.isArray(words) || words.length === 0) return { word: "Error", meaning: "Loading...", level: 1 };
   return words[Math.floor(Math.random() * words.length)];
 }
 
 export function generateQuizQuestion(word: Word, allWords: Word[]): QuizQuestion {
-  const wrongAnswers = allWords
-    .filter((w) => w.word !== word.word)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 2)
-    .map((w) => w.meaning);
-
-  const options = [word.meaning, ...wrongAnswers].sort(() => Math.random() - 0.5);
+  const wrongAnswers = allWords.filter(w => w.word !== word.word).sort(() => 0.5 - Math.random()).slice(0, 2).map(w => w.meaning);
+  const options = [word.meaning, ...wrongAnswers].sort(() => 0.5 - Math.random());
   return { word, options, correctIndex: options.indexOf(word.meaning) };
 }
 
@@ -91,9 +52,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const stateMap: Record<number, string> = { 0: 'state0', 1: 'state1', 2: 'state1_5', 3: 'state2' };
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
-  const stateStr = stateMap[state] || 'state0';
-  const ext = state === 0 ? 'png' : 'jpg';
-  return `characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  return `characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
