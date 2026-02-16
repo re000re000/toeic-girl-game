@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', 
+  base: './',
   build: {
     rollupOptions: {
       output: {
-        // [重要] Date.now() を入れることで、毎回違う名前のファイルを作らせます
+        // ファイル名に実行時の時間を刻印して、キャッシュを物理的に破壊します
         entryFileNames: `assets/[name]-${Date.now()}.js`,
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`
