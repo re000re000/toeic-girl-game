@@ -12,19 +12,31 @@ let cachedWords: Word[] = [];
 
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedWords.length > 0) return cachedWords;
-  
-  // GitHub Pages上での絶対パスを指定して、迷子をゼロにします
-  const dataPath = '/toeic-girl-game/data/words_data.json';
+
+  // 先頭の / を取り、'data/...' から始める
+  // これが「今の場所からの相対パス」として一番エラーになりにくい書き方です
+  const dataPath = 'data/words_data.json';
 
   try {
+    console.log("Fetching from:", dataPath); // どこを探しているかログに出す
     const response = await fetch(dataPath);
-    if (!response.ok) throw new Error('Network response was not ok');
+    
+    if (!response.ok) {
+       // 失敗した場合、予備のルート（リポジトリ名あり）も試す
+       const fallbackPath = '/toeic-girl-game/data/words_data.json';
+       console.log("First path failed, trying fallback:", fallbackPath);
+       const fallbackRes = await fetch(fallbackPath);
+       if (!fallbackRes.ok) throw new Error('Both paths failed');
+       const data = await fallbackRes.json();
+       cachedWords = Array.isArray(data) ? data : (data.words || []);
+       return cachedWords;
+    }
+
     const data = await response.json();
-    const words = Array.isArray(data) ? data : (data.words || []);
-    cachedWords = words;
-    return words;
+    cachedWords = Array.isArray(data) ? data : (data.words || []);
+    return cachedWords;
   } catch (error) {
-    console.error('Failed to load words:', error);
+    console.error('Data load error:', error);
     return [];
   }
 }
