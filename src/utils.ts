@@ -15,8 +15,10 @@ let cachedRawData: any = null;
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedRawData) return [];
 
-  // GitHub Pagesのサブディレクトリを考慮した絶対パス
-  const dataPath = '/toeic-girl-game/data/words_data.json'; 
+  // GitHub Pagesのサブディレクトリを考慮したパス解決
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  const base = isGitHubPages ? '/toeic-girl-game' : '';
+  const dataPath = `${base}/data/words_data.json`;
 
   try {
     console.log(`Attempting to fetch data from: ${dataPath}`);
@@ -98,7 +100,11 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const stateMap: Record<number, string> = { 0: 'state0', 1: 'state1', 2: 'state1_5', 3: 'state2' };
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
-  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
+  
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  const base = isGitHubPages ? '/toeic-girl-game' : '';
+  
+  return `${base}/characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
