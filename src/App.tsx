@@ -20,7 +20,7 @@ function AppContent() {
     
     try {
       await initializeGame(level);
-      console.log(`[DEBUG] initializeGame finished, switching to quiz screen`);
+     console.log(`[DEBUG] initializeGame finished, switching to quiz screen`);
       setCurrentScreen('quiz');
     } catch (error) {
       console.error('[DEBUG] Error in handleSelectLevel:', error);
