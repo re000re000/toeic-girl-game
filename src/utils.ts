@@ -13,11 +13,11 @@ let cachedRawData: Record<string, any[]> | null = null;
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedRawData) return [];
 
-  const pathsToTry = [
-    `${import.meta.env.BASE_URL}data/words_data.json`,
-    '/toeic-girl-game/data/words_data.json',
-    './data/words_data.json',
-  ];
+ const pathsToTry = [
+  '/toeic-girl-game/data/words_data.json',
+  './data/words_data.json',
+  '/data/words_data.json',
+];
 
   for (const dataPath of pathsToTry) {
     try {
@@ -112,7 +112,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-  return `${import.meta.env.BASE_URL}characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
