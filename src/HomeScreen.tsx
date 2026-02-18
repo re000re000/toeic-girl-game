@@ -1,10 +1,14 @@
 
-
 interface HomeScreenProps {
   onSelectLevel: (level: number) => void;
 }
 
 export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
+  const handleLevelClick = (level: number) => {
+    console.log(`[DEBUG] Level ${level} button clicked`);
+    onSelectLevel(level);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-blue-100 p-4">
       <div className="max-w-md mx-auto">
@@ -12,7 +16,6 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
         <div className="text-center mt-12 mb-8">
           <h1 className="text-4xl font-bold text-purple-900 mb-2">TOEIC英単語</h1>
           <h2 className="text-3xl font-bold text-pink-600 mb-4">美少女魔法バトル</h2>
-
         </div>
 
         {/* ゲーム説明 */}
@@ -20,7 +23,6 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
           <h3 className="text-xl font-bold text-gray-800 mb-4">ゲームの遊び方</h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li>✅ 英単語の意味を3択から選ぶ</li>
-
             <li>✅ 10問正解でステージクリア</li>
             <li>✅ 間違えるとハートが1つ減る</li>
             <li>✅ ハートが0になるとゲームオーバー</li>
@@ -34,7 +36,7 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
             {[1, 2, 3, 4, 5].map((level) => (
               <button
                 key={level}
-                onClick={() => onSelectLevel(level)}
+                onClick={() => handleLevelClick(level)}
                 className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-lg rounded-lg hover:shadow-lg transition-all hover:scale-105"
               >
                 Level {level}
