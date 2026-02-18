@@ -1,6 +1,5 @@
 import { Word, QuizQuestion, CharacterInfo } from './types';
 
-// キャラクター情報
 const CHARACTERS: Record<number, CharacterInfo[]> = {
   1: [{ id: 0, name: 'Alice', level: 1 }, { id: 1, name: 'Bella', level: 1 }, { id: 2, name: 'Chloe', level: 1 }],
   2: [{ id: 0, name: 'Diana', level: 2 }, { id: 1, name: 'Emma', level: 2 }, { id: 2, name: 'Fiona', level: 2 }],
@@ -9,44 +8,43 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
   5: [{ id: 0, name: 'Mia', level: 5 }, { id: 1, name: 'Nina', level: 5 }, { id: 2, name: 'Olivia', level: 5 }],
 };
 
-let cachedRawData: any = null;
+let cachedRawData: Record<string, any[]> | null = null;
 
-/**
- * 単語データを読み込む
- */
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedRawData) return [];
 
-  // GitHub Pages環境では、リポジトリ名を含む絶対パスが最も確実です
-  const dataPath = '/toeic-girl-game/data/words_data.json';
+  const pathsToTry = [
+    `${import.meta.env.BASE_URL}data/words_data.json`,
+    '/toeic-girl-game/data/words_data.json',
+    './data/words_data.json',
+  ];
 
-  try {
-    console.log(`[DEBUG] Fetching from: ${dataPath}`);
-    const response = await fetch(dataPath);
-    
-    if (!response.ok) {
-      // 失敗した場合は相対パスでリトライ
-      console.warn(`[DEBUG] Failed to load from ${dataPath}, trying relative path...`);
-      const fallbackResponse = await fetch('./data/words_data.json');
-      if (!fallbackResponse.ok) {
-        throw new Error(`Data load failed: ${fallbackResponse.status}`);
+  for (const dataPath of pathsToTry) {
+    try {
+      console.log(`[DEBUG] Fetching from: ${dataPath}`);
+      const response = await fetch(dataPath);
+      if (response.ok) {
+        const json = await response.json();
+        // JSONがオブジェクト形式 { level1: [...], level2: [...] } かチェック
+        if (json && typeof json === 'object' && !Array.isArray(json)) {
+          cachedRawData = json;
+          console.log('[DEBUG] Data loaded successfully', Object.keys(cachedRawData!));
+          return [];
+        } else if (Array.isArray(json)) {
+          // 万が一配列形式だった場合もサポート
+          cachedRawData = { level1: json };
+          console.log('[DEBUG] Data loaded as flat array');
+          return [];
+        }
       }
-      cachedRawData = await fallbackResponse.json();
-    } else {
-      cachedRawData = await response.json();
+    } catch (e) {
+      console.warn(`[DEBUG] Failed: ${dataPath}`, e);
     }
-
-    console.log("[DEBUG] Data loaded successfully", cachedRawData);
-    return [];
-  } catch (error) {
-    console.error('CRITICAL LOAD ERROR:', error);
-    throw new Error('単語データの読み込みに失敗しました。');
   }
+
+  throw new Error('単語データの読み込みに失敗しました。');
 }
 
-/**
- * レベルに合った単語をフィルタリングする
- */
 export function getWordsByLevel(level: any, _words: Word[]): Word[] {
   if (!cachedRawData) {
     console.error('[DEBUG] cachedRawData is null');
@@ -56,39 +54,53 @@ export function getWordsByLevel(level: any, _words: Word[]): Word[] {
   const levelKey = `level${level}`;
   const words = cachedRawData[levelKey];
 
-  if (!Array.isArray(words)) {
-    console.error(`[DEBUG] No array found for ${levelKey}`);
+  if (!Array.isArray(words) || words.length === 0) {
+    console.error(`[DEBUG] No array found for ${levelKey}`, cachedRawData);
     return [];
   }
 
-  return words.map((w: any) => ({
-    ...w,
-    level: Number(level)
-  }));
+  return words
+    .filter((w: any) => w && typeof w.word === 'string' && typeof w.meaning === 'string')
+    .map((w: any) => ({
+      word: w.word,
+      meaning: w.meaning,
+      level: Number(level),
+    }));
 }
 
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
-    return { word: "Error", meaning: "データなし", level: 1 };
+    return { word: 'Error', meaning: 'データなし', level: 1 };
   }
   return words[Math.floor(Math.random() * words.length)];
 }
 
 export function generateQuizQuestion(word: Word, _allWords: Word[]): QuizQuestion {
+  // 全レベルの単語を集める
   let allPossibleWords: Word[] = [];
   if (cachedRawData) {
-    Object.keys(cachedRawData).forEach(key => {
-      if (Array.isArray(cachedRawData[key])) {
-        allPossibleWords = allPossibleWords.concat(cachedRawData[key]);
+    Object.keys(cachedRawData).forEach((key) => {
+      const arr = cachedRawData![key];
+      if (Array.isArray(arr)) {
+        const mapped = arr
+          .filter((w: any) => w && typeof w.word === 'string' && typeof w.meaning === 'string')
+          .map((w: any) => ({ word: w.word, meaning: w.meaning, level: 1 }));
+        allPossibleWords = allPossibleWords.concat(mapped);
       }
     });
   }
 
+  // 正解以外の選択肢を2つ選ぶ
   const wrongAnswers = allPossibleWords
     .filter((w) => w.word !== word.word && w.meaning !== word.meaning)
     .sort(() => Math.random() - 0.5)
     .slice(0, 2)
     .map((w) => w.meaning);
+
+  // 万が一wrongAnswersが2つ未満の場合のフォールバック
+  while (wrongAnswers.length < 2) {
+    wrongAnswers.push('（選択肢なし）');
+  }
 
   const options = [word.meaning, ...wrongAnswers].sort(() => Math.random() - 0.5);
   return { word, options, correctIndex: options.indexOf(word.meaning) };
@@ -100,9 +112,7 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const charIndex = characterId % 3;
   const stateStr = stateMap[state] || 'state0';
   const ext = state === 0 ? 'png' : 'jpg';
-  
-  // 画像もリポジトリ名を含む絶対パスで指定
-  return `/toeic-girl-game/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
+  return `${import.meta.env.BASE_URL}characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {
@@ -111,5 +121,5 @@ export function getCharacterInfo(level: number): CharacterInfo | undefined {
 }
 
 export function getRandomCharacterId(level: number): number {
-  return ((level - 1) * 3) + Math.floor(Math.random() * 3);
+  return (level - 1) * 3 + Math.floor(Math.random() * 3);
 }
