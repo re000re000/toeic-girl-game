@@ -11,47 +11,66 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 
 let cachedRawData: any = null;
 
-// 単語データを読み込む
+/**
+ * GitHub Pagesのベースパスを取得する
+ */
+function getBasePath(): string {
+  return window.location.hostname.includes('github.io') ? '/toeic-girl-game' : '';
+}
+
+/**
+ * 単語データを読み込む
+ */
 export async function loadWordsData(): Promise<Word[]> {
   if (cachedRawData) return [];
 
-  // GitHub Pagesのサブディレクトリを考慮したパス解決
-  const isGitHubPages = window.location.hostname.includes('github.io');
-  const base = isGitHubPages ? '/toeic-girl-game' : '';
-  const dataPath = `${base}/data/words_data.json`;
+  const base = getBasePath();
+  // 複数のパス候補を試す
+  const paths = [
+    `${base}/data/words_data.json`,
+    `./data/words_data.json`,
+    `data/words_data.json`
+  ];
 
-  try {
-    console.log(`Attempting to fetch data from: ${dataPath}`);
-    const response = await fetch(dataPath);
-    if (!response.ok) {
-      throw new Error(`Data load failed: ${response.status} at ${response.url}`);
-    }
-    const data = await response.json();
-    console.log("Fetched data successfully:", data);
-    
-    cachedRawData = data;
-    return [];
-  } catch (error) {
-    console.error('CRITICAL LOAD ERROR:', error);
-    // フォールバックとして相対パスも試す
+  let lastError = null;
+
+  for (const path of paths) {
     try {
-      console.log("Attempting fallback with ./data/words_data.json");
-      const fallbackResponse = await fetch('./data/words_data.json');
-      if (fallbackResponse.ok) {
-        cachedRawData = await fallbackResponse.json();
-        return [];
+      console.log(`[DEBUG] Attempting to fetch data from: ${path}`);
+      const response = await fetch(path);
+      
+      if (!response.ok) {
+        console.warn(`[DEBUG] Failed to load from ${path}: ${response.status}`);
+        continue;
       }
-    } catch (e) {
-      console.error("Fallback also failed", e);
+
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("text/html")) {
+        console.warn(`[DEBUG] Received HTML instead of JSON from ${path}. This is likely a 404 page.`);
+        continue;
+      }
+
+      const data = await response.json();
+      console.log("[DEBUG] Fetched data successfully from:", path, data);
+      
+      cachedRawData = data;
+      return []; // 互換性のために空配列を返す
+    } catch (error) {
+      console.warn(`[DEBUG] Error fetching from ${path}:`, error);
+      lastError = error;
     }
-    return [];
   }
+
+  console.error('CRITICAL: All data load attempts failed.', lastError);
+  throw new Error('単語データの読み込みに失敗しました。通信環境を確認してください。');
 }
 
-// レベルに合った単語をフィルタリングする
+/**
+ * レベルに合った単語をフィルタリングする
+ */
 export function getWordsByLevel(level: any, _words: Word[]): Word[] {
   if (!cachedRawData) {
-    console.error('Data not loaded yet');
+    console.error('[DEBUG] Data not loaded yet when calling getWordsByLevel');
     return [];
   }
 
@@ -59,9 +78,11 @@ export function getWordsByLevel(level: any, _words: Word[]): Word[] {
   const words = cachedRawData[levelKey];
 
   if (!Array.isArray(words)) {
-    console.error(`No words found for level: ${levelKey}`);
+    console.error(`[DEBUG] No words found for level: ${levelKey}. Available keys:`, Object.keys(cachedRawData));
     return [];
   }
+
+  console.log(`[DEBUG] Found ${words.length} words for ${levelKey}`);
 
   return words.map((w: any) => ({
     ...w,
@@ -71,6 +92,7 @@ export function getWordsByLevel(level: any, _words: Word[]): Word[] {
 
 export function getRandomWord(words: Word[]): Word {
   if (!Array.isArray(words) || words.length === 0) {
+    console.error('[DEBUG] getRandomWord called with empty array');
     return { word: "Error", meaning: "データなし", level: 1 };
   }
   return words[Math.floor(Math.random() * words.length)];
@@ -86,14 +108,21 @@ export function generateQuizQuestion(word: Word, _allWords: Word[]): QuizQuestio
     });
   }
 
+  // 誤答の選択肢を生成
   const wrongAnswers = allPossibleWords
-    .filter((w) => w.word !== word.word)
+    .filter((w) => w.word !== word.word && w.meaning !== word.meaning)
     .sort(() => Math.random() - 0.5)
     .slice(0, 2)
     .map((w) => w.meaning);
 
+  // 選択肢をシャッフル
   const options = [word.meaning, ...wrongAnswers].sort(() => Math.random() - 0.5);
-  return { word, options, correctIndex: options.indexOf(word.meaning) };
+  
+  return { 
+    word, 
+    options, 
+    correctIndex: options.indexOf(word.meaning) 
+  };
 }
 
 export function getCharacterImagePath(characterId: number, state: number): string {
@@ -101,10 +130,11 @@ export function getCharacterImagePath(characterId: number, state: number): strin
   const level = Math.floor(characterId / 3) + 1;
   const charIndex = characterId % 3;
   
-  const isGitHubPages = window.location.hostname.includes('github.io');
-  const base = isGitHubPages ? '/toeic-girl-game' : '';
+  const base = getBasePath();
+  const stateStr = stateMap[state] || 'state0';
+  const ext = state === 0 ? 'png' : 'jpg';
   
-  return `${base}/characters/level${level}_char${charIndex}_${stateMap[state] || 'state0'}.${state === 0 ? 'png' : 'jpg'}`;
+  return `${base}/characters/level${level}_char${charIndex}_${stateStr}.${ext}`;
 }
 
 export function getCharacterInfo(level: number): CharacterInfo | undefined {

@@ -25,31 +25,44 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // ゲームを初期化
   const initializeGame = useCallback(async (level: number) => {
-    // データを読み込む（内部でキャッシュされる）
-    await loadWordsData();
+    try {
+      console.log(`[DEBUG] Initializing game for level: ${level}`);
+      // データを読み込む（内部でキャッシュされる）
+      await loadWordsData();
 
-    // レベルに応じた単語を取得
-    const levelSpecificWords = getWordsByLevel(level, []);
-    setLevelWords(levelSpecificWords);
+      // レベルに応じた単語を取得
+      const levelSpecificWords = getWordsByLevel(level, []);
+      if (levelSpecificWords.length === 0) {
+        throw new Error(`レベル ${level} の単語データが見つかりませんでした。`);
+      }
+      
+      setLevelWords(levelSpecificWords);
 
-    const characterId = getRandomCharacterId(level);
+      const characterId = getRandomCharacterId(level);
 
-    const newGameState: GameState = {
-      level,
-      currentQuestionIndex: 0,
-      correctAnswers: 0,
-      life: 3,
-      currentCharacterId: characterId,
-      characterState: 0,
-      missedWords: [],
-    };
+      const newGameState: GameState = {
+        level,
+        currentQuestionIndex: 0,
+        correctAnswers: 0,
+        life: 3,
+        currentCharacterId: characterId,
+        characterState: 0,
+        missedWords: [],
+      };
 
-    setGameState(newGameState);
+      setGameState(newGameState);
 
-    // 最初の問題を生成
-    const word = getRandomWord(levelSpecificWords);
-    const question = generateQuizQuestion(word, []);
-    setCurrentQuestion(question);
+      // 最初の問題を生成
+      const word = getRandomWord(levelSpecificWords);
+      const question = generateQuizQuestion(word, []);
+      setCurrentQuestion(question);
+      
+      console.log(`[DEBUG] Game initialized successfully for level ${level}`);
+    } catch (error) {
+      console.error('[DEBUG] Failed to initialize game:', error);
+      alert(error instanceof Error ? error.message : 'ゲームの初期化に失敗しました。');
+      throw error; // App.tsx側でキャッチできるように再スロー
+    }
   }, []);
 
   // 問題に答える
