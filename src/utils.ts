@@ -11,13 +11,16 @@ const CHARACTERS: Record<number, CharacterInfo[]> = {
 let cachedRawData: Record<string, any[]> | null = null;
 
 export async function loadWordsData(): Promise<Word[]> {
-  if (cachedRawData) return [];
+  if (cachedRawData) {
+    console.log('[DEBUG] Using cached data');
+    return [];
+  }
 
- const pathsToTry = [
-  '/toeic-girl-game/data/words_data.json',
-  './data/words_data.json',
-  '/data/words_data.json',
-];
+  const pathsToTry = [
+    '/toeic-girl-game/data/words_data.json',
+    './data/words_data.json',
+    '/data/words_data.json',
+  ];
 
   for (const dataPath of pathsToTry) {
     try {
@@ -25,24 +28,21 @@ export async function loadWordsData(): Promise<Word[]> {
       const response = await fetch(dataPath);
       if (response.ok) {
         const json = await response.json();
-        // JSONがオブジェクト形式 { level1: [...], level2: [...] } かチェック
+        console.log('[DEBUG] Raw JSON type:', typeof json, Array.isArray(json));
         if (json && typeof json === 'object' && !Array.isArray(json)) {
           cachedRawData = json;
-          console.log('[DEBUG] Data loaded successfully', Object.keys(cachedRawData!));
-          return [];
-        } else if (Array.isArray(json)) {
-          // 万が一配列形式だった場合もサポート
-          cachedRawData = { level1: json };
-          console.log('[DEBUG] Data loaded as flat array');
+          console.log('[DEBUG] Data loaded successfully. Keys:', Object.keys(cachedRawData!));
           return [];
         }
+      } else {
+        console.warn(`[DEBUG] HTTP ${response.status} from ${dataPath}`);
       }
     } catch (e) {
       console.warn(`[DEBUG] Failed: ${dataPath}`, e);
     }
   }
 
-  throw new Error('単語データの読み込みに失敗しました。');
+  throw new Error('単語データの読み込みに失敗しました。ネットワークタブで words_data.json が読み込まれているか確認してください。');
 }
 
 export function getWordsByLevel(level: any, _words: Word[]): Word[] {
