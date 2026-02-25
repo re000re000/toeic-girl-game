@@ -79,7 +79,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (isCorrect) {
         // 正解 - キャラクター状態を進める
         newGameState.correctAnswers += 1;
-        newGameState.characterState = Math.min(newGameState.characterState + 1, 3);
+        newGameState.characterState = Math.min(Math.floor(newGameState.correctAnswers / 3), 3);
 
         // 10問正解でクリア
         if (newGameState.correctAnswers >= 10) {
