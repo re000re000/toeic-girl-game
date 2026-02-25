@@ -22,7 +22,7 @@ export function HomeScreen({ onSelectLevel }: HomeScreenProps) {
 <h3 className="text-xl font-bold text-gray-800 mb-4">ゲームの遊び方</h3>
 <ul className="space-y-2 text-sm text-gray-700">
   <li> 英単語に正解して魔法攻撃をしよう！</li>
-  <li> 攻撃が当たると服が破けていきます！</li>
+  <li> 攻撃が当たると敵キャラクターの服が破けていきます！</li>
   <li> 10問正解でステージクリア！</li>
   <li> 間違えるとハートが1つ減り</li>
   <li> ハートが0になるとゲームオーバーになります！</li>
